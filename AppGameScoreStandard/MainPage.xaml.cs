@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Forms;
+using Xamarin.CommunityToolkit.Extensions;
 
 namespace AppGameScoreStandard
 {
@@ -49,7 +50,7 @@ namespace AppGameScoreStandard
                 {
                     LimparCampos();
                     BtCadastrar.Text = "Cadastrar";
-                    await DisplayAlert("Aviso", "Cadastro não existente." , "OK");
+                    await DisplayAlert("Aviso", "Cadastro não existente.", "OK");
                 }
             }
             catch (Exception error)
@@ -58,14 +59,66 @@ namespace AppGameScoreStandard
             }
         }
 
-        private void BtExcluir_Clicked(object sender, EventArgs e)
+        private async void BtExcluir_Clicked(object sender, EventArgs e)
         {
+            try
+            {
+                score = await api.GetHighScore(Convert.ToInt32(EntId.Text));
+                if (score.Id > 0)
+                {
+                    bool action = await DisplayAlert("Alerta", "Deseja realmente excluir este registro?", "Sim", "Não");
 
+                    if (action)
+                    {
+                        LimparCampos();
+                        BtCadastrar.Text = "Cadastrar";
+                        await api.DeleteHighScore(score.Id);
+                        await this.DisplayToastAsync("Registro excluído com sucesso!", 5000);
+                    }
+                }
+                else
+                {
+                    LimparCampos();
+                    BtCadastrar.Text = "Cadastrar";
+                    await DisplayAlert("Aviso", "Cadastro não existente.", "OK");
+                }
+            }
+            catch (Exception error)
+            {
+                await DisplayAlert("Erro", error.Message, "OK");
+            }
         }
 
-        private void BtCadastrar_Clicked(object sender, EventArgs e)
+        private async void BtCadastrar_Clicked(object sender, EventArgs e)
         {
+            try
+            {
+                score = new GameScore
+                {
+                    Highscore = Convert.ToInt32(EntHighScore.Text),
+                    Game = EntGame.Text,
+                    Name = EntName.Text,
+                    Phrase = EntPhrase.Text,
+                    Email = EntEmail.Text
+                };
 
+                if (BtCadastrar.Text.Equals("Atualizar"))
+                {
+                    score.Id = Convert.ToInt32(EntId);
+                    await api.UpdateHighScore(score);
+                }
+                else
+                {
+                    await api.CreateHighScore(score);
+                }
+
+                LimparCampos();
+                await DisplayAlert("Sucesso", "Operação realizada com sucesso!", "Ok");
+            }
+            catch (Exception error)
+            {
+                await DisplayAlert("Erro", error.Message, "OK");
+            }
         }
     }
 }
